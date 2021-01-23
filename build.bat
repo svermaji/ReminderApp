@@ -1,1 +1,0 @@
-ant -buildfile=jbossbuild.xml
