@@ -1,0 +1,361 @@
+package com.svws.common.log;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.SimpleLayout;
+
+import java.util.Date;
+import java.io.*;
+import java.text.SimpleDateFormat;
+
+import com.svws.common.UserContext;
+import com.svws.common.BasicContextManager;
+import com.svws.common.utils.StringUtils;
+import com.svws.common.utils.ServletConstants;
+import com.svws.common.utils.ProcessingException;
+
+/**
+ * Created by
+ * User: sverma
+ * Date: Feb 21, 2006
+ * Time: 11:31:16 AM
+ */
+/**
+ * This class is being to log the information
+ * used for debugging purpose
+ */
+public class Debug
+{
+
+    private static Thread reloadThread;
+    private static Logger logger = null;
+    private static Writer logWriter = null;
+    public static final String ERROR = "ERROR";
+    public static final String INFO = "INFO";
+    static FileAppender fileAppender = null;
+    private static SimpleLayout layout;
+
+    /**
+     * Initialized the logger with file name.
+     *
+     * @param logFile
+     * @throws IOException
+     */
+    public static void initialize ( String logFile ) throws IOException
+    {
+        final String LOGINFO = LogInfo.getLogInfo ( "Debug", "initialize" );
+        String logFileName = "svws.log";
+        if (StringUtils.hasValue ( logFile ))
+        {
+            logFileName = logFile;
+            write (INFO, LOGINFO  + "Log file created from ServletContext settings with name as logFileName = " + logFileName );
+        }
+
+        if (logger == null)
+        {
+            try
+            {
+                logger = Logger.getLogger(Debug.class);
+                layout = new SimpleLayout();
+                //String fullPath = BasicContextManager.getRealPath ( logFileName );
+                String fullPath = "E:\\i38\\tomcat\\webapps\\svws\\WEB-INF\\resources\\logs\\svws.log";
+                //fileAppender = new FileAppender (layout, fullPath, false);
+                fileAppender = new FileAppender (layout, fullPath, false);
+                logger.addAppender(fileAppender);
+                logWriter = new BufferedWriter( new FileWriter( fullPath ) );
+                write(INFO, LOGINFO + "log file created with name [" + logFileName + "] on " + new Date() );
+            }
+            catch (IOException e)
+            {
+                logger = null;
+                logWriter = null;
+                write(ERROR, LOGINFO + e.getMessage (), e );
+                throw new IOException (e.getMessage ());
+            }
+            catch (Exception e)
+            {
+                logger = null;
+                logWriter = null;
+                write(ERROR, LOGINFO + e.getMessage (), e );
+            }
+
+            //int reloadTime = BasicContextManager.getValueOfReloadProperty ();
+            int reloadTime = 30;
+            Debug.write (Debug.INFO, LOGINFO + "Reload time obtained as [" + reloadTime + "]");
+
+            startReloadThread (reloadTime);
+        }
+    }
+
+
+    /**
+     * Overloaded method.
+     *
+     * @param prefix
+     * @param message
+     */
+    public static void write ( String prefix, String message )
+    {
+        write (prefix, message, null);
+    }
+
+    /**
+     * Writes the debug statement in log file.
+     * If log file could not be initialized
+     * thn output would be redirected to console.
+     *
+     * @param prefix - ERROR or INFO
+     * @param message - debug statement
+     * @param t - throwable object
+     */
+    public static void write ( String prefix, String message, Throwable t)
+    {
+        String dateTime = new SimpleDateFormat ("d-MMM-yy, k:m:s").format ( new Date() );
+        StringBuffer sb = new StringBuffer ("[" + dateTime + "][" + getLoggedUserName () + "]: " + message );
+
+        try
+        {
+            //if (logger != null)
+            if (logWriter != null)
+            {
+                synchronized ( logWriter )
+                {
+                    /*
+                    if (prefix.equals ( Debug.INFO ))
+                    {
+                        //logger.setLevel (DebugLevel.INFO);
+                        //logger.log (Debug.class.toString (), DebugLevel.INFO, sb.toString (), null);
+                    }
+                    else if (prefix.equals ( Debug.ERROR ))
+                    {
+                        //logger.setLevel (DebugLevel.ERROR);
+                        //logger.log (Debug.class.toString (), DebugLevel.ERROR, sb.toString () + getStackTrace (t), t);
+                    }
+                    */
+                    logWriter.write ( "[" + prefix + "]" + sb.toString () + getStackTrace (t) + "\r\n");
+                    logWriter.flush ();
+                }
+            }
+            else
+            {
+                if (prefix.equals ( Debug.INFO ))
+                {
+                    System.out.println (Debug.class.toString () + prefix + ": " + sb.toString ());
+                }
+                else if (prefix.equals ( Debug.ERROR ))
+                {
+                    System.out.println (Debug.class.toString () + prefix + ": " + sb.toString () + getStackTrace (t));
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace ();
+        }
+
+    }
+
+    /**
+     * Check file size of log file so that
+     * if file size exceeds the limit then
+     * refreshes the log system.
+     */
+    private static void checkFileSize () throws ProcessingException
+    {
+        final String LOGINFO = LogInfo.getLogInfo ( "Debug", "checkFileSize" );
+
+        if (fileAppender == null)
+            throw new ProcessingException (LOGINFO + "fileAppender is null. Can not shift logs");
+
+        File logFile =  new File (fileAppender.getFile ());
+        //long mb = 8 * 1024 * 1024;
+        long mb = 8 * 1024;
+        //int logFileSizeInMB = Integer.parseInt ((String) BasicContextManager.getServletContextParamVal (ServletConstants.REFRESH_LOG_FILE_AT_SIZE_IN_MB, new Integer(2)));
+        int logFileSizeInMB = 1;
+        long checkFileLength = logFileSizeInMB * mb;
+
+        if (logFile != null && logFile.exists () && logFile.length () > checkFileLength)
+        {
+            String bkFileName = logFile.getName () + ".1";
+            System.out.println ( "bkFileName = " + bkFileName );
+            File bkFile = new File (logFile.getParentFile (), bkFileName);
+            System.out.println ( "bkFile.exists () = " + bkFile.exists () );
+            if (bkFile.exists ())
+            {
+                write (Debug.INFO, LOGINFO + "About to delete file [" + bkFile.getName () + "]");
+                boolean deleted = bkFile.delete ();
+                System.out.println ( ".........deleted = " + deleted );
+                if (deleted)
+                    write (Debug.INFO, LOGINFO + "Deleted old backup file with name [" + bkFile.getName () + "]");
+                else
+                    write (Debug.ERROR, LOGINFO + "Unable to delete old backup file with name [" + bkFile.getName () + "]");
+            }
+
+            //boolean created = bkFile.createNewFile ();
+            //System.out.println ( "created = " + created );
+
+            boolean renamed = false;
+            try
+            {
+                System.out.println ( "........bkFile.exists () = " + bkFile.exists () );
+                System.out.println ( "bkFile.getName () = " + bkFile.getName () );
+                //renamed = logFile.renameTo ( bkFile );
+                System.out.println ( "renamed = " + renamed );
+            }
+            catch (Exception e)
+            {
+                write (Debug.ERROR, LOGINFO + "Unable to rename file [" + logFile.getName () + "] to name [" + bkFile.getName () + "]", e);
+            }
+
+            if (renamed)
+                write (Debug.INFO, LOGINFO + "Renamed file [" + logFile.getName () + "] to name [" + bkFile.getName () + "]");
+            else
+                write (Debug.ERROR, LOGINFO + "Unable to rename file [" + logFile.getName () + "] to name [" + bkFile.getName () + "]");
+
+            //if (created)
+            if (true)
+                write (Debug.INFO, LOGINFO + "Created new backup file with name [" + bkFile.getName () + "]");
+            else
+                write (Debug.ERROR, LOGINFO + "Unable to create backup file with name [" + bkFile.getName () + "]");
+        }
+    }
+
+    /**
+     * Returs stacktrace as string for throwable object.
+     * In case throwable object is null returns empty string.
+     *
+     * @param t - throwable object
+     * @return string
+     */
+    private static String getStackTrace ( Throwable t )
+    {
+        if (t == null)
+            return "";
+        StringWriter sw = new StringWriter( );
+        PrintWriter pw = new PrintWriter( sw );
+        t.printStackTrace( pw );
+        return( sw.toString() );
+    }
+
+
+    /**
+     * Obtain currently logged in user.
+     * Returns "NoName" if no user is found.
+     *
+     * @return logged user name
+     */
+    private static String getLoggedUserName ()
+    {
+        final String LOGINFO = LogInfo.getLogInfo ( "Debug", "getLoggedUserName" );
+        UserContext userContext = null;
+        try
+        {
+            userContext = UserContext.getInstance ();
+        }
+        catch ( Exception e )
+        {
+            System.out.println ( ERROR + LOGINFO + "[" + e.getMessage () + "]" + getStackTrace ( e ));
+        }
+
+        String loginName = "NoName";
+        if (userContext != null && StringUtils.hasValue (userContext.getUserName ()))
+        {
+            loginName = userContext.getUserName ( );
+        }
+        else
+        {
+            //if (UserSession)
+        }
+
+        return loginName;
+    }
+
+    /**
+     * start the reload thread
+     *
+     * @param reloadInterval
+     */
+    private static synchronized void startReloadThread(long reloadInterval) {
+        final String LOGINFO = LogInfo.getLogInfo ("Debug", "startReloadThread" );
+        // Start the background reload thread.
+        if (reloadThread == null) {
+            Debug.write ( Debug.INFO, LOGINFO + "Creating reloadThread first time for interval [" + reloadInterval + "] minutes");
+            reloadThread = new Thread(new ReloadThread(reloadInterval));
+            Debug.write ( Debug.INFO, LOGINFO + "Thread created. Setting Daemon...");
+            reloadThread.setDaemon(true);
+            Debug.write ( Debug.INFO, LOGINFO + "Thread set to be Daemon. Starting thread...");
+            reloadThread.start();
+            Debug.write ( Debug.INFO, LOGINFO + "Thread started.");
+        }
+    }
+
+    /**
+     * Inner ReloadThread class
+     */
+    private static class ReloadThread implements Runnable
+    {
+        private long reloadInterval = 5;
+        private static final long MSEC_PER_MINUTE = 60 * 1000;
+
+        /**
+         * Constructor
+         *
+         * @param reloadInterval
+         */
+        public ReloadThread(long reloadInterval) {
+            final String LOGINFO = LogInfo.getLogInfo ("Debug.ReloadThread", "constructor" );
+            if (reloadInterval < 5)
+            {
+                Debug.write ( Debug.INFO, LOGINFO + "Parameter reloadInterval passed as [" + reloadInterval + "].");
+                Debug.write ( Debug.INFO, LOGINFO + "As it is less than 5 minutes, setting reloadInterval to 5.");
+                this.reloadInterval = MSEC_PER_MINUTE * 5;
+            }
+            else
+                this.reloadInterval = MSEC_PER_MINUTE * reloadInterval;
+
+            this.reloadInterval = 3000; // to delete
+        }
+
+        /**
+         * run method
+         */
+        public void run()
+        {
+            final String LOGINFO = LogInfo.getLogInfo ("Debug.ReloadThread", "run" );
+            try
+            {
+                do
+                {
+                    Debug.write ( Debug.INFO, LOGINFO + "Thread is about to sleep for interval [" + reloadInterval + "]");
+                    Thread.sleep(reloadInterval);
+                    Debug.write ( Debug.INFO, LOGINFO + "Thread is awake after interval [" + reloadInterval + "]");
+                    if (Thread.currentThread().isInterrupted())
+                    {
+                        Debug.write ( Debug.INFO, LOGINFO + "Thread interrupted. Breaking loop...");
+                        break;
+                    }
+                    Debug.write (Debug.INFO, LOGINFO + "Analysing logs to shift.");
+                    checkFileSize ();
+                    Debug.write (Debug.INFO, LOGINFO + "Analysis completed.");
+                } while (true);
+            }
+            catch (Exception e)
+            {
+                String msg = LOGINFO + e.getMessage ();
+                Debug.write ( Debug.ERROR, msg, e);
+            }
+        }
+    }
+
+    /**
+     * test.
+     *
+     * @param args
+     */
+    public static void main ( String[] args ) throws Exception
+    {
+        initialize ( "/WEB-INF/resources/logs/svws.log" );
+        for (int i = 0; i < 10000; i++)
+            write (INFO, "Logging test statement.");
+    }
+}

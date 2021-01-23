@@ -1,0 +1,10 @@
+[DBPARAMS]
+database_url = jdbc:weblogic:mssqlserver4
+driver_name = weblogic.jdbc.mssqlserver4.Driver
+database = SVWS
+user = SVWS
+password = SVWS
+server = IMPETUS-112
+port = 1433
+SQLJoinFilePath=SQLJOIN.properties
+lockTimeOut=60000

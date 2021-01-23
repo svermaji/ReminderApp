@@ -1,0 +1,95 @@
+<project name="svWebSite" default="build" basedir=".">
+<description>Web Site of Shailendra Verma</description>
+
+<target name="init" >
+<property name="sourceDir" value="source" />
+<property name="outputDir" value="source/build" />
+<property name="svWebSiteHome" value="e:\jboss-3.0.8\server\sv\deploy\svWebSite.beans" />
+<property name="meta-infDir" value="${outputDir}/META-INF" />
+<property name="JBoss_LIB" value="e:\jboss-3.0.8\lib" />
+<property name="JBoss_Server_LIB" value="e:\jboss-3.0.8\server\sv\lib" />
+<property name="classpath" value="${sourceDir};${JBoss_Server_LIB}\mail.jar;${JBoss_Server_LIB}\log4j.jar;${JBoss_Server_LIB}\javax.servlet.jar;${svWebSiteHome}/svWebSite.jar" />
+</target>
+
+<target name="clean" depends="init">
+<delete dir="${outputDir}"/>
+</target>
+
+<target name="prepare" depends="clean">
+<mkdir dir="${outputDir}"/>
+<mkdir dir="${meta-infDir}"/>
+</target>
+
+<target name="compile" depends="prepare">
+<javac srcdir="${sourceDir}/com/svws/common"  destdir="${outputDir}" classpath="${classpath}">
+  <include name="**/*.java" />
+</javac>
+<javac srcdir="${sourceDir}/com/svws/events"  destdir="${outputDir}" classpath="${classpath}">
+  <include name="**/*.java" />
+</javac>
+<javac srcdir="${sourceDir}/com/svws/user"  destdir="${outputDir}" classpath="${classpath}">
+  <include name="**/*.java" />
+</javac>
+<javac srcdir="${sourceDir}/com/svws/email"  destdir="${outputDir}" classpath="${classpath}">
+  <include name="**/*.java" />
+</javac>
+<javac srcdir="${sourceDir}/com/svws/web"  destdir="${outputDir}" classpath="${classpath}">
+  <include name="**/*.java" />
+</javac>
+</target>
+
+<target name="common" depends="compile">
+    <copy toDir="${meta-infDir}">
+        <fileset dir="${sourceDir}/com/svws/common/META-INF" >
+          <include name="**/*.xml" />
+        </fileset>
+    </copy>
+</target>
+
+<target name="events" depends="common">
+    <copy toDir="${meta-infDir}">
+        <fileset dir="${sourceDir}/com/svws/events/META-INF" >
+          <include name="**/*.xml" />
+        </fileset>
+    </copy>
+</target>
+
+<target name="user" depends="events">
+    <copy toDir="${meta-infDir}">
+        <fileset dir="${sourceDir}/com/svws/user/META-INF" >
+          <include name="**/*.xml" />
+        </fileset>
+    </copy>
+</target>
+
+<target name="email" depends="user">
+    <copy toDir="${meta-infDir}">
+        <fileset dir="${sourceDir}/com/svws/email/META-INF" >
+          <include name="**/*.xml" />
+        </fileset>
+    </copy>
+</target>
+
+<target name="web" depends="email">
+    <copy toDir="${meta-infDir}">
+        <fileset dir="${sourceDir}/com/svws/web/META-INF" >
+          <include name="**/*.xml" />
+        </fileset>
+    </copy>
+</target>
+
+<target name="build" depends="web" >
+    <delete dir="${meta-infDir}"/>
+    <delete file="${svWebSiteHome}/svWebSite.jar"/>
+    <jar jarfile="${svWebSiteHome}/svWebSite.jar">
+        <fileset dir="${outputDir}">
+            <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${outputDir}">
+            <include name="**/*.properties"/>
+        </fileset>
+    </jar>
+    <delete dir="${outputDir}"/>
+</target>
+
+</project>

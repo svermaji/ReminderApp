@@ -1,0 +1,27 @@
+Exception in thread "Timer-5" java.lang.IllegalStateException: getId: Session al
+ready invalidated
+        at org.apache.catalina.session.StandardSession.getId(StandardSession.jav
+a:328)
+        at org.apache.catalina.session.StandardSessionFacade.getId(StandardSessi
+onFacade.java:78)
+        at com.svws.web.SessionManager$MyTimerTask.run(SessionManager.java:217)
+        at java.util.TimerThread.mainLoop(Unknown Source)
+        at java.util.TimerThread.run(Unknown Source)
+Exception in thread "Timer-7" java.lang.IllegalStateException: getId: Session al
+ready invalidated
+        at org.apache.catalina.session.StandardSession.getId(StandardSession.jav
+a:328)
+        at org.apache.catalina.session.StandardSessionFacade.getId(StandardSessi
+onFacade.java:78)
+        at com.svws.web.SessionManager$MyTimerTask.run(SessionManager.java:217)
+        at java.util.TimerThread.mainLoop(Unknown Source)
+        at java.util.TimerThread.run(Unknown Source)
+Exception in thread "Timer-9" java.lang.IllegalStateException: getId: Session al
+ready invalidated
+        at org.apache.catalina.session.StandardSession.getId(StandardSession.jav
+a:328)
+        at org.apache.catalina.session.StandardSessionFacade.getId(StandardSessi
+onFacade.java:78)
+        at com.svws.web.SessionManager$MyTimerTask.run(SessionManager.java:217)
+        at java.util.TimerThread.mainLoop(Unknown Source)
+        at java.util.TimerThread.run(Unknown Source)
