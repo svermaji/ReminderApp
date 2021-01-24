@@ -9,9 +9,9 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>search-big-file</artifactId>
+    <artifactId>reminder-app</artifactId>
     <version>1.0</version>
-    <name>Search Large Files Utility</name>
+    <name>Reminder Utility</name>
 
     <dependencies>
         <dependency>

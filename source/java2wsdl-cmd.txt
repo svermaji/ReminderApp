@@ -1,4 +1,0 @@
-java org.apache.axis.wsdl.Java2WSDL -o svws.wsdl -l "http://localhost:9278/axis/services/SVWS" -n  "urn:SVWS" -p"com.svws.api" "urn:SVWS" com.svws.api.SVWSAPIIntfc
-
-
-java org.apache.axis.wsdl.WSDL2Java -o . -d Session -s -S true -Nurn:SVWS com.svws.api svws.wsdl
