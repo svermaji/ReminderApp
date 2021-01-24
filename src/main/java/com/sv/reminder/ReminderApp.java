@@ -20,7 +20,7 @@ public class ReminderApp extends AppFrame {
      * e.g. if enum is Xyz then when storing getXyz will be called
      */
     enum Configs {
-        EventType
+        EventReminders, User, Email
     }
 
     private MyLogger logger;
