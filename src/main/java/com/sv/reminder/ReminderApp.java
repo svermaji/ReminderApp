@@ -26,6 +26,9 @@ public class ReminderApp extends AppFrame {
     private MyLogger logger;
     private DefaultConfigs configs;
 
+    // Event - event_id, event_date, event_type, event_desc, receiver_email, sender_email
+    // Set user name and email
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new ReminderApp().initComponents());
     }
