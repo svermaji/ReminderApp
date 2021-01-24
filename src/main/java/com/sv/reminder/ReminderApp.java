@@ -20,7 +20,27 @@ public class ReminderApp extends AppFrame {
      * e.g. if enum is Xyz then when storing getXyz will be called
      */
     enum Configs {
-        EventReminders, User, Email
+        AllEventReminderType, User, Email
+    }
+
+    enum ReminderTypes {
+        days3("3-days", "Remind from 3 days prior till date of event"),
+        day1("1-day", "Remind on the day of event"),
+        direct("direct", "Send email directly to receiver");
+
+        String type, desc;
+        ReminderTypes(String type, String desc) {
+            this.type = type;
+            this.desc = desc;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
     }
 
     private MyLogger logger;
@@ -43,8 +63,19 @@ public class ReminderApp extends AppFrame {
     private void initComponents() {
         logger = MyLogger.createLogger(getClass());
         configs = new DefaultConfigs(logger, Utils.getConfigsAsArr(Configs.class));
-
+        configs.saveConfig(this);
         setToCenter();
     }
 
+    public String getAllEventReminderType() {
+        return "";
+    }
+
+    public String getUser() {
+        return "";
+    }
+
+    public String getEmail() {
+        return "";
+    }
 }
